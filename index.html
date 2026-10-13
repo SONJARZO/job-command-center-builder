@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Job Command Center Builder</title>
+<meta name="description" content="Answer 15 questions and get a personalized prompt to build your own Job Search Command Center in Claude.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one centered column, one screen at a time — welcome, prep, 15 single questions, prompt. Single deliberate dark navy/gold look (SONJARZOAI brand). */
+:root{
+  --navy:#011635; --navy-deep:#010e22; --navy-mid:#02204e; --field:#061d42;
+  --gold:#B99446; --gold-light:#d4b06a; --ink:#ffffff; --muted:#c8c4a8;
+  --line:rgba(185,148,70,.38); --line-soft:rgba(185,148,70,.18);
+  --error:#ffaaa5; --success:#a8dcb0;
+  --display:'Playfair Display',Georgia,'Times New Roman',serif;
+  --body:'DM Sans',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --radius:14px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--navy-deep)}
+body{margin:0;background:var(--navy-deep);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.65;
+  background-image:radial-gradient(1200px 520px at 50% -180px, rgba(2,32,78,.95), transparent 70%);background-repeat:no-repeat;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--gold-light)}
+:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px;border-radius:6px}
+.wrap{width:100%;max-width:780px;margin:0 auto;padding-inline:20px}
+
+/* Top bar */
+.topbar{border-bottom:1px solid var(--line-soft)}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px}
+.wordmark{font-family:var(--display);font-weight:900;font-size:1.25rem;letter-spacing:.06em;color:var(--gold);text-decoration:none}
+.topbar small{color:var(--muted);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+
+main{flex:1;padding-block:44px 64px}
+.screen[hidden]{display:none!important}
+
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.1rem,6vw,3.3rem);font-weight:900}
+h1 .gold{color:var(--gold)}
+h2{font-size:clamp(1.55rem,4.4vw,2.1rem);font-weight:700}
+h3{font-size:1.15rem;font-weight:700;color:var(--gold-light)}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-light);margin:0 0 12px}
+.lede{color:var(--muted);font-size:1.12rem;max-width:62ch;margin:18px 0 0}
+p{margin:0}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* Buttons */
+.btn{appearance:none;border:0;cursor:pointer;font:600 1rem/1 var(--body);padding:16px 26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;transition:transform .12s ease, background-color .15s ease, border-color .15s ease}
+.btn-primary{background:var(--gold);color:var(--navy-deep)}
+.btn-primary:hover{background:var(--gold-light)}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn-ghost:hover{border-color:var(--gold)}
+.btn-text{background:none;border:0;color:var(--gold-light);font:600 .95rem var(--body);cursor:pointer;padding:8px 4px;text-decoration:underline;text-underline-offset:4px}
+.btn:active{transform:translateY(1px)}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* Welcome */
+.hero{padding-bottom:34px;border-bottom:1px solid var(--line-soft)}
+.hero .btn-row{margin-top:30px}
+.gets{margin-top:36px;display:grid;grid-template-columns:1fr;gap:28px}
+.gets ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px}
+.gets li{display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:start}
+.tick{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--gold);display:grid;place-items:center;margin-top:3px}
+.tick::after{content:"";width:8px;height:4px;border-left:2px solid var(--gold-light);border-bottom:2px solid var(--gold-light);transform:rotate(-45deg) translate(1px,-1px)}
+
+.pipeline{margin-top:6px;padding:20px;border:1px solid var(--line-soft);border-radius:var(--radius);background:rgba(2,32,78,.45)}
+.pipeline-label{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:12px}
+.stages{display:flex;flex-wrap:wrap;gap:8px}
+.stage{font-size:.85rem;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.stage.on{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+details.about{margin-top:28px;border:1.5px solid var(--gold);border-radius:var(--radius);background:linear-gradient(135deg,rgba(2,32,78,.75),rgba(1,14,34,.75))}
+details.about summary{cursor:pointer;list-style:none;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:700}
+details.about summary::-webkit-details-marker{display:none}
+details.about summary .plus{font-family:var(--display);font-size:1.5rem;color:var(--gold);line-height:1;transition:transform .2s}
+details.about[open] summary .plus{transform:rotate(45deg)}
+details.about .about-body{padding:0 22px 22px;color:var(--muted);display:grid;gap:12px}
+
+/* Prep */
+.check-list{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:14px}
+.check-item{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:20px;border:1px solid var(--line-soft);border-radius:var(--radius);background:rgba(2,32,78,.4)}
+.check-item input{width:22px;height:22px;accent-color:var(--gold);margin-top:3px}
+.check-item label{cursor:pointer;display:grid;gap:4px}
+.check-item strong{font-size:1.05rem}
+.check-item span{color:var(--muted);font-size:.95rem}
+.note{margin-top:22px;padding:16px 20px;border-radius:12px;background:rgba(185,148,70,.1);border:1px solid rgba(185,148,70,.45);color:var(--muted);font-size:.95rem}
+.note strong{color:var(--gold-light)}
+
+/* Questionnaire */
+.progress{margin-bottom:30px}
+.progress-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.progress-count{font-weight:700;font-variant-numeric:tabular-nums}
+.progress-section{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-light);font-weight:700}
+.bar{height:6px;border-radius:999px;background:var(--line-soft);overflow:hidden}
+.bar span{display:block;height:100%;background:var(--gold);width:0;transition:width .3s ease}
+
+.q{border:0;margin:0;padding:0;min-width:0}
+.q[hidden]{display:none}
+.q legend{padding:0 0 10px;margin:0;width:100%;float:left}
+.q legend + *{clear:both}
+.q:not([hidden]) ~ .q:not([hidden]){margin-top:44px;padding-top:40px;border-top:1px solid var(--line-soft)}
+.q h2{font-size:clamp(1.35rem,3.6vw,1.7rem)}
+.q-num{font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-light);margin:0 0 8px}
+.progress-count:focus{outline:none}
+.q h2:focus{outline:none}
+.req{display:inline-block;margin-left:8px;font:700 .7rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--navy-deep);background:var(--gold-light);padding:3px 8px;border-radius:999px;vertical-align:middle}
+.opt{display:inline-block;margin-left:8px;font:600 .7rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;vertical-align:middle}
+.help{color:var(--muted);margin:12px 0 22px;max-width:62ch}
+.example{font-size:.92rem;color:var(--muted);margin-top:8px}
+.example b{color:var(--gold-light);font-weight:600}
+
+.field{display:grid;gap:8px;min-width:0}
+.field>label,.sub-label{font-weight:600;font-size:.95rem}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+input[type=text],input[type=number],input[type=time],select,textarea{
+  width:100%;font:500 1rem var(--body);color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+textarea{min-height:120px;resize:vertical;line-height:1.55}
+input::placeholder,textarea::placeholder{color:#8f8c7a}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold-light);box-shadow:0 0 0 3px rgba(212,176,106,.25)}
+[aria-invalid=true]{border-color:var(--error)!important}
+
+.choices{display:grid;gap:10px}
+.choices.cols{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.choice{position:relative}
+.choice input{position:absolute;opacity:0;width:1px;height:1px}
+.choice label{display:flex;gap:12px;align-items:flex-start;padding:15px 16px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;background:var(--field);transition:border-color .15s, background-color .15s}
+.choice label::before{content:"";flex:none;width:20px;height:20px;margin-top:2px;border:2px solid var(--gold);border-radius:6px;background:transparent}
+.choice input[type=radio]+label::before{border-radius:50%}
+.choice input:checked+label{border-color:var(--gold);background:rgba(185,148,70,.14)}
+.choice input:checked+label::before{background:var(--gold);box-shadow:inset 0 0 0 3px var(--field)}
+.choice input:focus-visible+label{outline:3px solid var(--gold-light);outline-offset:2px}
+.choice label span{display:grid;gap:2px}
+.choice label small{color:var(--muted);font-size:.88rem}
+
+.chip-entry{display:flex;gap:10px}
+.chip-entry input{flex:1}
+.chip-entry .btn{padding:14px 20px;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;list-style:none;padding:0}
+.chip{display:inline-flex;align-items:center;gap:6px;background:rgba(185,148,70,.16);border:1px solid var(--gold);border-radius:999px;padding:6px 6px 6px 14px;font-weight:600;font-size:.95rem;max-width:100%}
+.chip span{overflow-wrap:anywhere}
+.chip button{border:0;background:transparent;color:var(--gold-light);cursor:pointer;width:28px;height:28px;border-radius:50%;font-size:1.1rem;line-height:1}
+.chip button:hover{background:rgba(185,148,70,.25)}
+
+.range-row{display:flex;align-items:center;gap:18px}
+input[type=range]{flex:1;accent-color:var(--gold);height:32px;min-width:0}
+.range-val{font-family:var(--display);font-weight:900;font-size:2.4rem;color:var(--gold);min-width:2.5ch;text-align:right;font-variant-numeric:tabular-nums}
+
+.days{display:flex;flex-wrap:wrap;gap:8px}
+.days .choice label{padding:10px 14px}
+.days .choice label::before{width:16px;height:16px}
+
+.error{color:var(--error);font-weight:600;font-size:.95rem;margin-top:14px;min-height:0}
+.error:empty{display:none}
+
+.q-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:34px;padding-top:24px;border-top:1px solid var(--line-soft);flex-wrap:wrap}
+.q-nav .right{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto}
+
+/* Result */
+.prompt-box{margin-top:26px;border:1.5px solid var(--gold);border-radius:var(--radius);background:var(--navy);overflow:hidden}
+.prompt-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
+.prompt-head span{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--gold-light)}
+.prompt-head small{color:var(--muted);font-size:.85rem}
+#promptText{display:block;border:0;border-radius:0;background:transparent;min-height:440px;font:400 .95rem/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:18px;color:var(--ink)}
+#promptText:focus{box-shadow:inset 0 0 0 2px var(--gold-light)}
+.result-actions{margin-top:20px}
+.status{margin-top:14px;font-weight:600;padding:12px 16px;border-radius:10px}
+.status.ok{color:var(--success);background:rgba(168,220,176,.1);border:1px solid rgba(168,220,176,.4)}
+.status.warn{color:var(--gold-light);background:rgba(185,148,70,.1);border:1px solid var(--line)}
+.status[hidden]{display:none}
+.steps{list-style:none;counter-reset:s;margin:22px 0 0;padding:0;display:grid;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start}
+.steps li::before{content:counter(s);font-family:var(--display);font-weight:900;font-size:1.4rem;color:var(--navy-deep);background:var(--gold);width:44px;height:44px;border-radius:50%;display:grid;place-items:center}
+.steps strong{display:block}
+.steps span{color:var(--muted);font-size:.95rem}
+.next-block{margin-top:44px;padding-top:30px;border-top:1px solid var(--line-soft)}
+
+.confirm{margin-top:16px;padding:18px 20px;border:1.5px solid var(--gold);border-radius:12px;background:rgba(2,32,78,.6)}
+.confirm[hidden]{display:none}
+.confirm p{margin-bottom:14px}
+
+/* Footer */
+footer{border-top:1px solid var(--line-soft)}
+footer .wrap{padding-block:26px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}
+footer a{font-weight:700;text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+@media (max-width:520px){
+  body{font-size:16px}
+  main{padding-block:30px 48px}
+  .btn{width:100%}
+  .btn-row .btn{width:100%}
+  .q-nav .right{width:100%}
+  .q-nav .right .btn{flex:1}
+  .chip-entry{flex-direction:column}
+  .topbar small{display:none}
+  #promptText{min-height:380px}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="wordmark" href="https://www.sonjarzoai.com" target="_blank" rel="noopener">SONJARZOAI</a>
+    <small>Job Command Center Builder</small>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- 1. WELCOME -->
+    <section class="screen" id="screen-welcome" aria-labelledby="welcome-title">
+      <div class="hero">
+        <p class="eyebrow">Free prompt builder</p>
+        <h1 id="welcome-title" tabindex="-1">Build Your Daily Job Search <span class="gold">Command Center</span></h1>
+        <p class="lede">Answer a few simple questions and get a personalized prompt to find relevant jobs, prioritize your applications, and track your progress.</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" type="button" data-go="prep">Build My Command Center</button>
+        </div>
+      </div>
+
+      <div class="gets">
+        <div>
+          <h3>What you'll get</h3>
+          <ul>
+            <li><span class="tick" aria-hidden="true"></span><span>Ranked job opportunities that match your requirements.</span></li>
+            <li><span class="tick" aria-hidden="true"></span><span>A clear recommendation for which job to apply for first.</span></li>
+            <li><span class="tick" aria-hidden="true"></span><span>Guidance on relevant strengths and qualifications to highlight.</span></li>
+            <li><span class="tick" aria-hidden="true"></span><span>An application and follow-up tracker.</span></li>
+            <li><span class="tick" aria-hidden="true"></span><span>A refresh schedule you choose, such as every weekday at 10:00 AM.</span></li>
+          </ul>
+        </div>
+        <div class="pipeline" aria-label="Example of the application tracker stages">
+          <div class="pipeline-label">Your tracker follows every application</div>
+          <div class="stages">
+            <span class="stage">Saved</span><span class="stage">Preparing</span><span class="stage on">Applied</span><span class="stage">Interview</span><span class="stage">Offer</span><span class="stage">Declined</span><span class="stage">Withdrawn</span>
+          </div>
+        </div>
+      </div>
+
+      <details class="about">
+        <summary>About This Builder <span class="plus" aria-hidden="true">+</span></summary>
+        <div class="about-body">
+          <p>This website creates a personalized prompt from your answers. It doesn't search for jobs itself, and it doesn't need an account.</p>
+          <p>You copy the prompt into Claude. Claude uses your Indeed connection to read your Indeed résumé, research current job postings, and build your command center as a dashboard you can come back to.</p>
+          <p>Your answers stay in this browser tab. Nothing is sent to a server or shared with other visitors.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 2. PREP -->
+    <section class="screen" id="screen-prep" aria-labelledby="prep-title" hidden>
+      <p class="eyebrow">Before you start</p>
+      <h2 id="prep-title" tabindex="-1">Get ready in two minutes</h2>
+      <p class="lede">Check these off so Claude has what it needs when you paste your prompt.</p>
+
+      <ul class="check-list">
+        <li class="check-item">
+          <input type="checkbox" id="prep1">
+          <label for="prep1"><strong>Your Indeed profile and résumé are up to date</strong><span>Claude reads your experience straight from Indeed. You won't upload a résumé here.</span></label>
+        </li>
+        <li class="check-item">
+          <input type="checkbox" id="prep2">
+          <label for="prep2"><strong>Indeed is connected in Claude</strong><span>In Claude, open your connectors and connect Indeed. Signing in happens on Indeed's own page.</span></label>
+        </li>
+        <li class="check-item">
+          <input type="checkbox" id="prep3">
+          <label for="prep3"><strong>You know your must-haves</strong><span>Think about pay, location, remote or on-site, and anything you want to rule out.</span></label>
+        </li>
+      </ul>
+
+      <p class="note"><strong>About the refresh schedule:</strong> Claude can set up a scheduled task to refresh your command center automatically. Scheduled tasks depend on the features available in your Claude account. If they aren't available, Claude will tell you, and you can refresh by asking in the same chat.</p>
+
+      <div class="q-nav">
+        <button class="btn btn-ghost" type="button" data-go="welcome">Back</button>
+        <div class="right"><button class="btn btn-primary" type="button" data-go="questions">Start the Questions</button></div>
+      </div>
+    </section>
+
+    <!-- 3. QUESTIONS -->
+    <section class="screen" id="screen-questions" aria-label="Job search questionnaire" hidden>
+      <div class="progress">
+        <div class="progress-top">
+          <span class="progress-count" id="progressCount" tabindex="-1" aria-live="polite">Page 1 of 3 · Questions 1–5</span>
+          <span class="progress-section" id="progressSection">About you and your pay</span>
+        </div>
+        <div class="bar" role="progressbar" aria-label="Questionnaire progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" id="progressBar"><span></span></div>
+      </div>
+
+      <form id="qform" novalidate>
+
+        <!-- Q1 -->
+        <fieldset class="q" data-step="1" data-section="About you">
+          <legend><h2 tabindex="-1">What should we call you?<span class="req">Required</span></h2></legend>
+          <p class="help">Your first or preferred name. It goes on your command center, like "Jordan's Daily Job Search Command Center."</p>
+          <div class="field">
+            <label for="name">First or preferred name</label>
+            <input type="text" id="name" name="name" autocomplete="given-name" maxlength="40" placeholder="Jordan">
+          </div>
+          <p class="error" id="err-1" role="alert"></p>
+        </fieldset>
+
+        <!-- Q2 -->
+        <fieldset class="q" data-step="2" data-section="About you" hidden>
+          <legend><h2 tabindex="-1">Which job titles are you targeting?<span class="req">Required</span></h2></legend>
+          <p class="help">Add each title separately. Include close variations, since employers name the same role differently.</p>
+          <div class="field">
+            <label for="titleInput">Job title</label>
+            <div class="chip-entry">
+              <input type="text" id="titleInput" maxlength="80" placeholder="Project Manager">
+              <button class="btn btn-ghost" type="button" id="addTitle">Add title</button>
+            </div>
+            <p class="example">Examples: <b>Logistics Coordinator</b>, <b>IT Support Specialist</b>, <b>Program Analyst</b>, <b>Operations Manager</b></p>
+          </div>
+          <ul class="chips" id="titleChips" aria-label="Job titles you added"></ul>
+          <p class="error" id="err-2" role="alert"></p>
+        </fieldset>
+
+        <!-- Q3 -->
+        <fieldset class="q" data-step="3" data-section="About you" hidden>
+          <legend><h2 tabindex="-1">What skills, industries, or interests should guide the search?<span class="opt">Optional</span></h2></legend>
+          <p class="help">Claude will also read your Indeed résumé. Use this space for what you want to lean into, including skills from military service you want to carry into civilian work.</p>
+          <div class="field">
+            <label for="skills">Skills, industries, or career interests</label>
+            <textarea id="skills" maxlength="1200" placeholder="Supply chain, team leadership, Microsoft Excel, government contracting, healthcare operations"></textarea>
+          </div>
+        </fieldset>
+
+        <!-- Q4 -->
+        <fieldset class="q" data-step="4" data-section="About you" hidden>
+          <legend><h2 tabindex="-1">What experience level fits you?<span class="req">Required</span></h2></legend>
+          <p class="help">Pick the level you want to apply at. Choose more than one if you're open to a range.</p>
+          <div class="choices cols" id="levelGroup">
+            <div class="choice"><input type="checkbox" id="lv1" name="level" value="Entry level"><label for="lv1"><span>Entry level<small>0–2 years</small></span></label></div>
+            <div class="choice"><input type="checkbox" id="lv2" name="level" value="Mid level"><label for="lv2"><span>Mid level<small>3–7 years</small></span></label></div>
+            <div class="choice"><input type="checkbox" id="lv3" name="level" value="Senior"><label for="lv3"><span>Senior<small>8+ years, individual contributor</small></span></label></div>
+            <div class="choice"><input type="checkbox" id="lv4" name="level" value="Manager or supervisor"><label for="lv4"><span>Manager or supervisor<small>Leads a team</small></span></label></div>
+            <div class="choice"><input type="checkbox" id="lv5" name="level" value="Director or executive"><label for="lv5"><span>Director or executive<small>Leads managers or a function</small></span></label></div>
+          </div>
+          <p class="error" id="err-4" role="alert"></p>
+        </fieldset>
+
+        <!-- Q5 -->
+        <fieldset class="q" data-step="5" data-section="Pay" hidden>
+          <legend><h2 tabindex="-1">What pay are you looking for?<span class="opt">Optional</span></h2></legend>
+          <p class="help">Enter a minimum, a range, or leave it blank if pay isn't a filter for you.</p>
+          <div class="grid-2">
+            <div class="field"><label for="salMin">Minimum</label><input type="number" id="salMin" min="0" step="any" inputmode="decimal" placeholder="65000"></div>
+            <div class="field"><label for="salMax">Maximum (optional)</label><input type="number" id="salMax" min="0" step="any" inputmode="decimal" placeholder="85000"></div>
+            <div class="field"><label for="currency">Currency</label>
+              <select id="currency"><option value="USD">USD ($)</option><option value="CAD">CAD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="AUD">AUD ($)</option></select></div>
+            <div class="field"><label for="period">Pay period</label>
+              <select id="period"><option value="per year">Per year</option><option value="per hour">Per hour</option><option value="per month">Per month</option></select></div>
+          </div>
+          <p class="error" id="err-5" role="alert"></p>
+        </fieldset>
+
+        <!-- Q6 -->
+        <fieldset class="q" data-step="6" data-section="Pay" hidden>
+          <legend><h2 tabindex="-1">Include jobs that don't list a salary?<span class="req">Required</span></h2></legend>
+          <p class="help">Many good postings leave pay out. Including them gives you more options; leaving them out keeps the list tighter.</p>
+          <div class="choices">
+            <div class="choice"><input type="radio" id="und1" name="undisclosed" value="include" checked><label for="und1"><span>Yes, include them<small>Claude will label the pay "Not disclosed"</small></span></label></div>
+            <div class="choice"><input type="radio" id="und2" name="undisclosed" value="exclude"><label for="und2"><span>No, leave them out<small>Only show jobs with posted pay</small></span></label></div>
+          </div>
+        </fieldset>
+
+        <!-- Q7 -->
+        <fieldset class="q" data-step="7" data-section="Location" hidden>
+          <legend><h2 tabindex="-1">Where are you searching?<span class="req">Required</span></h2></legend>
+          <p class="help">Your country is required. Add a city or region and how far you're willing to commute for hybrid or on-site jobs.</p>
+          <div class="grid-2">
+            <div class="field"><label for="country">Country</label><input type="text" id="country" autocomplete="country-name" placeholder="United States" value="United States"></div>
+            <div class="field"><label for="city">City, state, or region</label><input type="text" id="city" autocomplete="address-level2" placeholder="San Antonio, TX"></div>
+            <div class="field"><label for="radius">Commuting radius</label><input type="number" id="radius" min="0" max="500" inputmode="numeric" placeholder="25" value="25"></div>
+            <div class="field"><label for="radiusUnit">Unit</label><select id="radiusUnit"><option value="miles">Miles</option><option value="km">Kilometers</option></select></div>
+          </div>
+          <p class="error" id="err-7" role="alert"></p>
+        </fieldset>
+
+        <!-- Q8 -->
+        <fieldset class="q" data-step="8" data-section="Location" hidden>
+          <legend><h2 tabindex="-1">Which work arrangements work for you?<span class="req">Required</span></h2></legend>
+          <p class="help">Choose all that apply.</p>
+          <div class="choices">
+            <div class="choice"><input type="checkbox" id="ar1" name="arrangement" value="Remote"><label for="ar1"><span>Remote<small>Work from home</small></span></label></div>
+            <div class="choice"><input type="checkbox" id="ar2" name="arrangement" value="Hybrid"><label for="ar2"><span>Hybrid<small>Some days in the office</small></span></label></div>
+            <div class="choice"><input type="checkbox" id="ar3" name="arrangement" value="On-site"><label for="ar3"><span>On-site<small>In person every day</small></span></label></div>
+          </div>
+          <p class="error" id="err-8" role="alert"></p>
+        </fieldset>
+
+        <!-- Q9 -->
+        <fieldset class="q" data-step="9" data-section="Location" hidden>
+          <legend><h2 tabindex="-1">Any location limits for remote jobs?<span class="opt">Optional</span></h2></legend>
+          <p class="help">Some remote jobs only hire in certain states or countries, or need you working certain time zones.</p>
+          <div class="field">
+            <label for="remoteRestrict">Remote work restrictions</label>
+            <textarea id="remoteRestrict" maxlength="600" placeholder="Remote jobs must be open to candidates in Virginia. I can work Eastern or Central time hours."></textarea>
+          </div>
+        </fieldset>
+
+        <!-- Q10 -->
+        <fieldset class="q" data-step="10" data-section="The search" hidden>
+          <legend><h2 tabindex="-1">Which job types should Claude include?<span class="req">Required</span></h2></legend>
+          <p class="help">Choose all that apply.</p>
+          <div class="choices cols">
+            <div class="choice"><input type="checkbox" id="jt1" name="jobType" value="Full-time"><label for="jt1"><span>Full-time</span></label></div>
+            <div class="choice"><input type="checkbox" id="jt2" name="jobType" value="Part-time"><label for="jt2"><span>Part-time</span></label></div>
+            <div class="choice"><input type="checkbox" id="jt3" name="jobType" value="Contract"><label for="jt3"><span>Contract</span></label></div>
+            <div class="choice"><input type="checkbox" id="jt4" name="jobType" value="Temporary"><label for="jt4"><span>Temporary</span></label></div>
+            <div class="choice"><input type="checkbox" id="jt5" name="jobType" value="Internship"><label for="jt5"><span>Internship</span></label></div>
+          </div>
+          <p class="error" id="err-10" role="alert"></p>
+        </fieldset>
+
+        <!-- Q11 -->
+        <fieldset class="q" data-step="11" data-section="The search" hidden>
+          <legend><h2 tabindex="-1">How recent should the job postings be?<span class="req">Required</span></h2></legend>
+          <p class="help">Newer postings usually get faster responses. 21 days is a good balance.</p>
+          <div class="choices cols">
+            <div class="choice"><input type="radio" id="ag3" name="age" value="3"><label for="ag3"><span>Last 3 days</span></label></div>
+            <div class="choice"><input type="radio" id="ag7" name="age" value="7"><label for="ag7"><span>Last 7 days</span></label></div>
+            <div class="choice"><input type="radio" id="ag14" name="age" value="14"><label for="ag14"><span>Last 14 days</span></label></div>
+            <div class="choice"><input type="radio" id="ag21" name="age" value="21" checked><label for="ag21"><span>Last 21 days<small>Recommended</small></span></label></div>
+            <div class="choice"><input type="radio" id="ag30" name="age" value="30"><label for="ag30"><span>Last 30 days</span></label></div>
+          </div>
+        </fieldset>
+
+        <!-- Q12 -->
+        <fieldset class="q" data-step="12" data-section="The search" hidden>
+          <legend><h2 tabindex="-1">How many ranked opportunities do you want?<span class="req">Required</span></h2></legend>
+          <p class="help">Choose 1 to 15. Claude will show fewer if fewer jobs truly fit.</p>
+          <div class="field">
+            <label for="count">Number of ranked jobs</label>
+            <div class="range-row">
+              <input type="range" id="count" min="1" max="15" step="1" value="10" aria-describedby="countVal">
+              <output class="range-val" id="countVal" for="count">10</output>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Q13 -->
+        <fieldset class="q" data-step="13" data-section="The search" hidden>
+          <legend><h2 tabindex="-1">What should Claude rule out or require?<span class="opt">Optional</span></h2></legend>
+          <p class="help">You decide. Check anything you want excluded, then add your own.</p>
+          <div class="choices cols">
+            <div class="choice"><input type="checkbox" id="ex1" name="excl" value="Jobs that require an active security clearance I don't hold"><label for="ex1"><span>Clearance I don't hold</span></label></div>
+            <div class="choice"><input type="checkbox" id="ex2" name="excl" value="Jobs with more than 25% travel"><label for="ex2"><span>Travel over 25%</span></label></div>
+            <div class="choice"><input type="checkbox" id="ex3" name="excl" value="Jobs that require relocation"><label for="ex3"><span>Relocation required</span></label></div>
+            <div class="choice"><input type="checkbox" id="ex4" name="excl" value="Night, overnight, or weekend shifts"><label for="ex4"><span>Night or weekend shifts</span></label></div>
+            <div class="choice"><input type="checkbox" id="ex5" name="excl" value="Staffing agency and third-party recruiter postings"><label for="ex5"><span>Staffing agencies</span></label></div>
+            <div class="choice"><input type="checkbox" id="ex6" name="excl" value="Commission-only pay"><label for="ex6"><span>Commission-only pay</span></label></div>
+          </div>
+          <div class="stack" style="margin-top:20px">
+            <div class="field">
+              <label for="exclOther">Other exclusions</label>
+              <textarea id="exclOther" maxlength="800" placeholder="No call centers. No jobs at companies I already applied to: Acme Logistics."></textarea>
+            </div>
+            <div class="field">
+              <label for="otherReq">Other requirements or things in your favor</label>
+              <textarea id="otherReq" maxlength="800" placeholder="I hold an active Secret clearance. I need a schedule that ends by 5:00 PM. Open to relocating to Texas."></textarea>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Q14 -->
+        <fieldset class="q" data-step="14" data-section="Refresh schedule" hidden>
+          <legend><h2 tabindex="-1">How often should your command center refresh?<span class="req">Required</span></h2></legend>
+          <p class="help">Claude will set up a scheduled task that searches again on this schedule and updates your dashboard.</p>
+          <div class="choices cols">
+            <div class="choice"><input type="radio" id="fq1" name="freq" value="daily" checked><label for="fq1"><span>Daily<small>Every day</small></span></label></div>
+            <div class="choice"><input type="radio" id="fq2" name="freq" value="weekdays"><label for="fq2"><span>Weekdays<small>Monday to Friday</small></span></label></div>
+            <div class="choice"><input type="radio" id="fq3" name="freq" value="weekly"><label for="fq3"><span>Weekly<small>One day a week</small></span></label></div>
+            <div class="choice"><input type="radio" id="fq4" name="freq" value="specific"><label for="fq4"><span>Specific days<small>You pick the days</small></span></label></div>
+          </div>
+
+          <div class="field" id="weeklyWrap" style="margin-top:20px" hidden>
+            <label for="weeklyDay">Which day?</label>
+            <select id="weeklyDay">
+              <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+            </select>
+          </div>
+
+          <div id="daysWrap" style="margin-top:20px" hidden>
+            <p class="sub-label" id="daysLabel">Which days?</p>
+            <div class="days" role="group" aria-labelledby="daysLabel" style="margin-top:8px">
+              <div class="choice"><input type="checkbox" id="d1" name="days" value="Monday"><label for="d1"><span>Mon</span></label></div>
+              <div class="choice"><input type="checkbox" id="d2" name="days" value="Tuesday"><label for="d2"><span>Tue</span></label></div>
+              <div class="choice"><input type="checkbox" id="d3" name="days" value="Wednesday"><label for="d3"><span>Wed</span></label></div>
+              <div class="choice"><input type="checkbox" id="d4" name="days" value="Thursday"><label for="d4"><span>Thu</span></label></div>
+              <div class="choice"><input type="checkbox" id="d5" name="days" value="Friday"><label for="d5"><span>Fri</span></label></div>
+              <div class="choice"><input type="checkbox" id="d6" name="days" value="Saturday"><label for="d6"><span>Sat</span></label></div>
+              <div class="choice"><input type="checkbox" id="d7" name="days" value="Sunday"><label for="d7"><span>Sun</span></label></div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:20px">
+            <div class="field"><label for="time">Time</label><input type="time" id="time" value="10:00"></div>
+            <div class="field"><label for="tz">Time zone</label>
+              <select id="tz">
+                <option value="America/New_York">Eastern Time (ET)</option>
+                <option value="America/Chicago">Central Time (CT)</option>
+                <option value="America/Denver">Mountain Time (MT)</option>
+                <option value="America/Phoenix">Arizona Time (no daylight saving)</option>
+                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                <option value="America/Anchorage">Alaska Time (AKT)</option>
+                <option value="Pacific/Honolulu">Hawaii Time (HT)</option>
+                <option value="America/Puerto_Rico">Atlantic Time (Puerto Rico, USVI)</option>
+                <option value="Pacific/Guam">Chamorro Time (Guam)</option>
+                <option value="Europe/London">UK Time</option>
+                <option value="Europe/Berlin">Central European Time</option>
+                <option value="UTC">UTC</option>
+              </select>
+            </div>
+          </div>
+          <p class="error" id="err-14" role="alert"></p>
+        </fieldset>
+
+        <!-- Q15 -->
+        <fieldset class="q" data-step="15" data-section="Final touches" hidden>
+          <legend><h2 tabindex="-1">Anything else Claude should know?<span class="opt">Optional</span></h2></legend>
+          <p class="help">Add any extra instructions for your search or your dashboard.</p>
+          <div class="field">
+            <label for="extra">Additional instructions</label>
+            <textarea id="extra" maxlength="1200" placeholder="Prioritize federal contractors and veteran-friendly employers. Show me which jobs mention veterans' preference."></textarea>
+          </div>
+        </fieldset>
+
+        <div class="q-nav">
+          <button class="btn btn-ghost" type="button" id="backBtn">Back</button>
+          <div class="right">
+            <button class="btn btn-ghost" type="button" id="returnBtn" hidden>Back to My Prompt</button>
+            <button class="btn btn-primary" type="submit" id="nextBtn">Next</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- 4. RESULT -->
+    <section class="screen" id="screen-result" aria-labelledby="result-title" hidden>
+      <p class="eyebrow">Your prompt is ready</p>
+      <h2 id="result-title" tabindex="-1">Your personalized prompt</h2>
+      <p class="lede">Read it over. You can edit the text right here before you copy it.</p>
+
+      <div class="prompt-box">
+        <div class="prompt-head"><span>Prompt for Claude</span><small id="charCount"></small></div>
+        <label for="promptText" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Your generated prompt</label>
+        <textarea id="promptText" spellcheck="true"></textarea>
+      </div>
+
+      <div class="btn-row result-actions">
+        <button class="btn btn-primary" type="button" id="copyBtn">Copy My Prompt</button>
+        <button class="btn btn-ghost" type="button" id="editBtn">Edit My Answers</button>
+        <button class="btn-text" type="button" id="startOverBtn">Start Over</button>
+      </div>
+      <p class="status" id="copyStatus" role="status" hidden></p>
+
+      <div class="confirm" id="confirmBox" hidden>
+        <p><strong>Start over?</strong> This clears all your answers and your prompt.</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" type="button" id="confirmYes">Yes, clear everything</button>
+          <button class="btn btn-ghost" type="button" id="confirmNo">Keep my answers</button>
+        </div>
+      </div>
+
+      <div class="next-block">
+        <h3>What to do next</h3>
+        <ol class="steps">
+          <li><div><strong>Copy your prompt.</strong><span>Use the Copy My Prompt button above.</span></div></li>
+          <li><div><strong>Paste it into a new chat in Claude.</strong><span>Make sure Indeed is connected first.</span></div></li>
+          <li><div><strong>Let Claude read your Indeed résumé.</strong><span>Approve the Indeed tools when Claude asks. If your résumé can't be found, Claude will ask for a short summary instead.</span></div></li>
+          <li><div><strong>Review your command center and confirm your schedule.</strong><span>Start with your top-priority job, then update your tracker as you apply.</span></div></li>
+        </ol>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Created by <a href="https://www.sonjarzoai.com" target="_blank" rel="noopener">SONJARZOAI</a></span>
+    <span>© 2026 SONJARZOAI. All rights reserved.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var TOTAL = 15;
+  var KEY = "jccb-answers-v1";
+  var step = 1;
+  var titles = [];
+  var cameFromResult = false;
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- Screens ---------- */
+  var screens = { welcome: $("screen-welcome"), prep: $("screen-prep"), questions: $("screen-questions"), result: $("screen-result") };
+  function show(name){
+    Object.keys(screens).forEach(function(k){ screens[k].hidden = (k !== name); });
+    try { window.scrollTo(0,0); } catch(e){}
+    var target = name === "questions" ? currentHeading() : screens[name].querySelector("h1,h2");
+    if (target) { setTimeout(function(){ try{ target.focus({preventScroll:true}); }catch(e){ target.focus(); } }, 30); }
+    save();
+  }
+  document.querySelectorAll("[data-go]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var to = b.getAttribute("data-go");
+      if (to === "questions") { cameFromResult = false; goStep(step); show("questions"); }
+      else show(to);
+    });
+  });
+
+  /* ---------- Job title chips ---------- */
+  function renderChips(){
+    var ul = $("titleChips"); ul.innerHTML = "";
+    titles.forEach(function(t, i){
+      var li = document.createElement("li"); li.className = "chip";
+      var s = document.createElement("span"); s.textContent = t;
+      var b = document.createElement("button"); b.type = "button"; b.textContent = "×";
+      b.setAttribute("aria-label", "Remove " + t);
+      b.addEventListener("click", function(){ titles.splice(i,1); renderChips(); save(); $("titleInput").focus(); });
+      li.appendChild(s); li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function addTitle(){
+    var inp = $("titleInput");
+    var parts = inp.value.split(/[,;\n]/).map(function(s){ return s.trim(); }).filter(Boolean);
+    parts.forEach(function(p){
+      if (!titles.some(function(t){ return t.toLowerCase() === p.toLowerCase(); }) && titles.length < 12) titles.push(p);
+    });
+    inp.value = "";
+    if (parts.length) { clearErr(2); renderChips(); save(); }
+    return parts.length > 0;
+  }
+  $("addTitle").addEventListener("click", function(){ addTitle(); $("titleInput").focus(); });
+  $("titleInput").addEventListener("keydown", function(e){
+    if (e.key === "Enter") { e.preventDefault(); addTitle(); }
+  });
+
+  /* ---------- Range ---------- */
+  $("count").addEventListener("input", function(){ $("countVal").textContent = this.value; });
+
+  /* ---------- Schedule extras ---------- */
+  function syncFreq(){
+    var f = radio("freq");
+    $("weeklyWrap").hidden = f !== "weekly";
+    $("daysWrap").hidden = f !== "specific";
+  }
+  document.querySelectorAll('input[name="freq"]').forEach(function(r){ r.addEventListener("change", function(){ syncFreq(); clearErr(14); }); });
+
+  /* ---------- Helpers ---------- */
+  function radio(name){ var el = document.querySelector('input[name="'+name+'"]:checked'); return el ? el.value : ""; }
+  function checks(name){ return Array.prototype.map.call(document.querySelectorAll('input[name="'+name+'"]:checked'), function(e){ return e.value; }); }
+  function setRadio(name, v){ var el = document.querySelector('input[name="'+name+'"][value="'+v+'"]'); if (el) el.checked = true; }
+  function setChecks(name, arr){ document.querySelectorAll('input[name="'+name+'"]').forEach(function(e){ e.checked = (arr||[]).indexOf(e.value) > -1; }); }
+  function val(id){ return $(id).value.trim(); }
+
+  function collect(){
+    return {
+      name: val("name"), titles: titles.slice(), skills: val("skills"), level: checks("level"),
+      salMin: val("salMin"), salMax: val("salMax"), currency: $("currency").value, period: $("period").value,
+      undisclosed: radio("undisclosed"), country: val("country"), city: val("city"), radius: val("radius"), radiusUnit: $("radiusUnit").value,
+      arrangement: checks("arrangement"), remoteRestrict: val("remoteRestrict"), jobType: checks("jobType"),
+      age: radio("age"), count: $("count").value, excl: checks("excl"), exclOther: val("exclOther"), otherReq: val("otherReq"),
+      freq: radio("freq"), weeklyDay: $("weeklyDay").value, days: checks("days"), time: $("time").value, tz: $("tz").value,
+      extra: val("extra"),
+      prep: [$("prep1").checked, $("prep2").checked, $("prep3").checked]
+    };
+  }
+  function apply(d){
+    if (!d) return;
+    ["name","skills","salMin","salMax","country","city","radius","remoteRestrict","exclOther","otherReq","extra","time"].forEach(function(k){ if (d[k] !== undefined) $(k).value = d[k]; });
+    ["currency","period","radiusUnit","weeklyDay","tz"].forEach(function(k){ if (d[k]) $(k).value = d[k]; });
+    if (d.count) { $("count").value = d.count; $("countVal").textContent = d.count; }
+    titles = Array.isArray(d.titles) ? d.titles.slice() : []; renderChips();
+    setChecks("level", d.level); setChecks("arrangement", d.arrangement); setChecks("jobType", d.jobType); setChecks("excl", d.excl); setChecks("days", d.days);
+    if (d.undisclosed) setRadio("undisclosed", d.undisclosed);
+    if (d.age) setRadio("age", d.age);
+    if (d.freq) setRadio("freq", d.freq);
+    if (Array.isArray(d.prep)) { $("prep1").checked = !!d.prep[0]; $("prep2").checked = !!d.prep[1]; $("prep3").checked = !!d.prep[2]; }
+    syncFreq();
+  }
+
+  /* ---------- Session storage (this tab only) ---------- */
+  function save(){
+    try {
+      var data = collect();
+      data._step = step;
+      data._screen = Object.keys(screens).filter(function(k){ return !screens[k].hidden; })[0] || "welcome";
+      data._prompt = $("promptText").value;
+      sessionStorage.setItem(KEY, JSON.stringify(data));
+    } catch(e){}
+  }
+  function load(){
+    try { var raw = sessionStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+  }
+  function wipe(){ try { sessionStorage.removeItem(KEY); } catch(e){} }
+
+  document.getElementById("qform").addEventListener("input", save);
+  document.getElementById("qform").addEventListener("change", save);
+  document.querySelectorAll("#screen-prep input").forEach(function(c){ c.addEventListener("change", save); });
+
+  /* ---------- Pages (5 questions each) ---------- */
+  var PER = 5, PAGES = Math.ceil(TOTAL / PER);
+  var PAGE_NAMES = ["About you and your pay", "Location and job type", "Your search and schedule"];
+  var fieldsets = Array.prototype.slice.call(document.querySelectorAll(".q"));
+  fieldsets.forEach(function(fs){
+    var n = Number(fs.getAttribute("data-step"));
+    var tag = document.createElement("p"); tag.className = "q-num"; tag.textContent = "Question " + n + " of " + TOTAL;
+    var lg = fs.querySelector("legend"); lg.insertBefore(tag, lg.firstChild);
+  });
+  function pageOf(n){ return Math.ceil(n / PER); }
+  function currentHeading(){ return $("progressCount"); }
+  function goStep(p){
+    step = Math.max(1, Math.min(PAGES, p || 1));
+    fieldsets.forEach(function(fs){ fs.hidden = pageOf(Number(fs.getAttribute("data-step"))) !== step; });
+    var first = (step - 1) * PER + 1, last = Math.min(step * PER, TOTAL);
+    $("progressCount").textContent = "Page " + step + " of " + PAGES + " · Questions " + first + "–" + last;
+    $("progressSection").textContent = PAGE_NAMES[step - 1];
+    $("progressBar").setAttribute("aria-valuenow", step);
+    $("progressBar").firstElementChild.style.width = (step / PAGES * 100) + "%";
+    $("backBtn").textContent = step === 1 ? "Back to Prep" : "Back";
+    $("nextBtn").textContent = step === PAGES ? "Generate My Prompt" : "Next: Questions " + (last + 1) + "–" + Math.min(last + PER, TOTAL);
+    $("returnBtn").hidden = !cameFromResult;
+    save();
+  }
+  function focusHeading(){ var h = currentHeading(); if (h) { try{ h.focus({preventScroll:true}); }catch(e){ h.focus(); } } try { window.scrollTo(0,0); } catch(e){} }
+
+  var firstInvalid = null;
+  function setErr(n, msg, el){
+    var e = $("err-" + n); if (e) e.textContent = msg;
+    if (el) { el.setAttribute("aria-invalid","true"); if (!firstInvalid) firstInvalid = el; }
+  }
+  function clearErr(n){
+    var e = $("err-" + n); if (e) e.textContent = "";
+    var fs = fieldsets[n-1]; if (fs) fs.querySelectorAll("[aria-invalid]").forEach(function(x){ x.removeAttribute("aria-invalid"); });
+  }
+  document.getElementById("qform").addEventListener("input", function(e){ if (e.target.getAttribute("aria-invalid")) e.target.removeAttribute("aria-invalid"); });
+  document.getElementById("qform").addEventListener("change", function(e){
+    if (e.target.type === "checkbox" || e.target.type === "radio") { var q = e.target.closest(".q"); if (q) clearErr(Number(q.getAttribute("data-step"))); }
+  });
+
+  function validate(n){
+    clearErr(n);
+    switch(n){
+      case 1: if (!val("name")) { setErr(1, "Enter your first or preferred name so we can name your command center.", $("name")); return false; } break;
+      case 2: if (val("titleInput")) addTitle();
+              if (!titles.length) { setErr(2, "Add at least one job title. Type a title, then select Add title.", $("titleInput")); return false; } break;
+      case 4: if (!checks("level").length) { setErr(4, "Choose at least one experience level.", $("lv1")); return false; } break;
+      case 5:
+        var mn = val("salMin"), mx = val("salMax");
+        if ((mn && Number(mn) < 0) || (mx && Number(mx) < 0)) { setErr(5, "Pay amounts can't be negative.", $(Number(mn) < 0 ? "salMin" : "salMax")); return false; }
+        if (mn && mx && Number(mx) < Number(mn)) { setErr(5, "The maximum is lower than the minimum. Raise the maximum or clear it.", $("salMax")); return false; }
+        if (!mn && mx) { setErr(5, "Add a minimum too, or clear the maximum.", $("salMin")); return false; }
+        break;
+      case 7:
+        if (!val("country")) { setErr(7, "Enter the country you're searching in.", $("country")); return false; }
+        var r = val("radius"); if (r && (Number(r) < 0 || Number(r) > 500)) { setErr(7, "Enter a commuting radius between 0 and 500.", $("radius")); return false; }
+        break;
+      case 8: if (!checks("arrangement").length) { setErr(8, "Choose at least one work arrangement.", $("ar1")); return false; } break;
+      case 10: if (!checks("jobType").length) { setErr(10, "Choose at least one job type.", $("jt1")); return false; } break;
+      case 14:
+        if (radio("freq") === "specific" && !checks("days").length) { setErr(14, "Pick at least one day for your refresh.", $("d1")); return false; }
+        if (!$("time").value) { setErr(14, "Choose a time for your refresh.", $("time")); return false; }
+        break;
+    }
+    return true;
+  }
+  function focusInvalid(){
+    if (!firstInvalid) return;
+    var el = firstInvalid;
+    try { el.scrollIntoView({block:"center"}); } catch(e){}
+    try { el.focus({preventScroll:true}); } catch(e){ el.focus(); }
+  }
+  function validatePage(p, noFocus){
+    firstInvalid = null; var ok = true;
+    for (var n = (p - 1) * PER + 1; n <= Math.min(p * PER, TOTAL); n++){ if (!validate(n)) ok = false; }
+    if (!ok && !noFocus) focusInvalid();
+    return ok;
+  }
+  function validateAll(){
+    for (var p = 1; p <= PAGES; p++){
+      if (!validatePage(p, true)) { goStep(p); show("questions"); setTimeout(focusInvalid, 80); return false; }
+    }
+    return true;
+  }
+
+  $("qform").addEventListener("submit", function(e){
+    e.preventDefault();
+    if (!validatePage(step)) return;
+    if (step < PAGES) { goStep(step + 1); focusHeading(); }
+    else generate();
+  });
+  $("backBtn").addEventListener("click", function(){
+    for (var n = (step - 1) * PER + 1; n <= Math.min(step * PER, TOTAL); n++) clearErr(n);
+    if (step === 1) show("prep"); else { goStep(step - 1); focusHeading(); }
+  });
+  $("returnBtn").addEventListener("click", function(){ if (validatePage(step)) generate(); });
+
+  // Enter in a single-line field shouldn't jump pages; the Next button does that.
+  $("qform").addEventListener("keydown", function(e){
+    if (e.key === "Enter" && e.target.tagName === "INPUT" && e.target.id !== "titleInput") e.preventDefault();
+  });
+
+  /* ---------- Prompt ---------- */
+  function fmtTime(t){
+    if (!t) return "10:00 AM";
+    var p = t.split(":"), h = Number(p[0]), m = p[1] || "00";
+    var ap = h >= 12 ? "PM" : "AM"; h = h % 12; if (h === 0) h = 12;
+    return h + ":" + m + " " + ap;
+  }
+  function listJoin(a){
+    if (a.length <= 1) return a.join("");
+    if (a.length === 2) return a[0] + " and " + a[1];
+    return a.slice(0,-1).join(", ") + ", and " + a[a.length-1];
+  }
+  function money(n, cur){
+    var num = Number(n);
+    var sym = {USD:"$",CAD:"CA$",AUD:"A$",EUR:"€",GBP:"£"}[cur] || "";
+    var s = num.toLocaleString("en-US", {maximumFractionDigits: 2});
+    return sym + s;
+  }
+  function scheduleText(d){
+    switch(d.freq){
+      case "weekdays": return "every weekday (Monday through Friday)";
+      case "weekly": return "once a week, every " + d.weeklyDay;
+      case "specific": return "every " + listJoin(d.days);
+      default: return "every day";
+    }
+  }
+  function tzLabel(v){ var o = $("tz").querySelector('option[value="'+v+'"]'); return o ? o.textContent + " (" + v + ")" : v; }
+
+  function buildPrompt(d){
+    var name = d.name;
+    var poss = name + "'s";
+    var center = poss + " Daily Job Search Command Center";
+    var L = [];
+    var b = function(s){ L.push("- " + s); };
+
+    L.push("Build " + center);
+    L.push("");
+    L.push("You are my job search assistant. Build \"" + center + "\" as an interactive Claude artifact dashboard, then set it up to refresh on the schedule below. Use the Indeed connector to read my résumé and to research jobs.");
+    L.push("");
+    L.push("STEP 1: CHECK YOUR TOOLS AND MY PROFILE");
+    b("Confirm the Indeed connector is available in this chat. If it isn't, stop and tell me how to connect it before doing anything else.");
+    b("Pull my résumé and profile from Indeed. Use it as the only source for my experience, skills, and qualifications.");
+    b("If you can't retrieve my Indeed résumé, tell me, and ask me for a short summary of my experience before you make any claims about how well I qualify. Do not guess my background.");
+    L.push("");
+    L.push("STEP 2: MY SEARCH CRITERIA");
+    L.push("Apply these exactly. Don't loosen them unless I say so.");
+    b("Target job titles: " + d.titles.join("; "));
+    b("Skills, industries, or interests to focus on: " + (d.skills || "Use what's in my Indeed résumé."));
+    b("Experience level: " + listJoin(d.level));
+    if (d.salMin && d.salMax) b("Pay: " + money(d.salMin, d.currency) + " to " + money(d.salMax, d.currency) + " " + d.period + " (" + d.currency + "). Treat " + money(d.salMin, d.currency) + " as my minimum.");
+    else if (d.salMin) b("Pay: at least " + money(d.salMin, d.currency) + " " + d.period + " (" + d.currency + ").");
+    else b("Pay: no minimum. Don't filter by pay, but show it when it's posted.");
+    if (d.undisclosed === "exclude") b("Jobs that don't list a salary: leave them out.");
+    else b("Jobs that don't list a salary: include them and label the pay \"Not disclosed.\"");
+    var loc = (d.city ? d.city + ", " : "") + d.country;
+    var radius = d.radius ? " Hybrid and on-site jobs must be within " + d.radius + " " + d.radiusUnit + " of " + (d.city || "my location") + "." : "";
+    b("Location: " + loc + "." + (d.arrangement.indexOf("Hybrid") > -1 || d.arrangement.indexOf("On-site") > -1 ? radius : ""));
+    b("Work arrangement: " + listJoin(d.arrangement) + ".");
+    if (d.arrangement.indexOf("Remote") > -1) b("Remote job restrictions: " + (d.remoteRestrict || "Remote jobs must hire candidates located in " + d.country + "."));
+    b("Job types: " + listJoin(d.jobType) + ".");
+    b("Posted within the last " + d.age + " days.");
+    b("Number of ranked opportunities: up to " + d.count + ".");
+    var ex = d.excl.slice(); if (d.exclOther) ex.push(d.exclOther);
+    b("Exclude: " + (ex.length ? ex.join("; ") : "Nothing specific."));
+    if (d.otherReq) b("Other requirements and things in my favor: " + d.otherReq);
+    if (d.extra) b("Additional instructions: " + d.extra);
+    L.push("");
+    L.push("STEP 3: RESEARCH ON INDEED");
+    b("Search Indeed for current postings that match my criteria. Run a separate search for each target title, and for each location or work arrangement when needed.");
+    b("Pull the full job details for promising results before you rank them.");
+    b("Prefer the employer's direct listing or application link when one is available.");
+    b("Remove duplicates, including the same job posted more than once.");
+    b("Rank up to " + d.count + " opportunities. If fewer jobs truly fit, show fewer and tell me why.");
+    L.push("");
+    L.push("STEP 4: ASSESS AND RANK");
+    L.push("Rank each job on experience match with my résumé, required qualifications, salary, location, work arrangement, and how recently it was posted.");
+    b("Separate mandatory qualifications from preferred qualifications.");
+    b("Pick ONE top-priority application and explain why I should apply to it first.");
+    L.push("");
+    L.push("For each job, show:");
+    ["Job title and employer",
+     "Location and work arrangement",
+     "Salary and pay period, or \"Not disclosed\"",
+     "Posting date, or \"Date not confirmed\"",
+     "Source and the direct posting or application link",
+     "Why it matches me",
+     "Required qualifications and any real gaps",
+     "Strengths to highlight and truthful résumé points to emphasize",
+     "Recommended next action"].forEach(function(t, i){ L.push((i+1) + ". " + t); });
+    L.push("");
+    L.push("STEP 5: BUILD MY DASHBOARD");
+    L.push("Create a Claude artifact named \"" + center + "\" with:");
+    b("A \"Last updated\" date and time at the top.");
+    b("A Top Priority card for the job I should apply to first.");
+    b("The ranked job list, with filters for work arrangement, job type, pay, posting date, and tracker status.");
+    b("My search requirements shown on the page and editable, so I can change them and ask you to run the search again.");
+    b("An application tracker with these statuses: Saved, Preparing, Applied, Interview, Offer, Declined, Withdrawn. For each job, track the application date, follow-up date, notes, and link. Highlight follow-ups that are due today or overdue.");
+    b("A button to export my tracker as a CSV file.");
+    b("Save my tracker updates so they're still there when I come back, using whatever persistent storage the artifact supports. Tell me plainly where my data is stored and anything that could cause it to be lost.");
+    b("A clean, professional design that works on my phone and my computer.");
+    L.push("");
+    L.push("STEP 6: SET UP MY REFRESH SCHEDULE");
+    b("Create a scheduled task that refreshes my command center " + scheduleText(d) + " at " + fmtTime(d.time) + " " + tzLabel(d.tz) + ".");
+    b("On each refresh: search again with my criteria, add new matching jobs and mark them \"New,\" flag postings that have closed, update the \"Last updated\" time, and update this same dashboard so the link stays the same. Keep all my tracker statuses and notes.");
+    b("After you set it up, tell me the exact schedule you created.");
+    b("If scheduled tasks aren't available on my account, say so clearly and tell me how to refresh it myself by asking you in this chat.");
+    b("Don't tell me automatic refreshes are active unless the scheduled task was actually created. \"Daily\" describes my routine until then.");
+    L.push("");
+    L.push("HONESTY RULES");
+    b("Never invent jobs, employers, salaries, dates, qualifications, experience, or links.");
+    b("Label anything you couldn't confirm as unconfirmed.");
+    b("Describe my experience only from my Indeed résumé or what I tell you.");
+    b("If a search fails or a tool isn't available, tell me what happened, give me useful Indeed search links, and offer to let me add jobs manually.");
+    L.push("");
+    L.push("When you're done, give me a short summary: how many jobs you found, my top-priority application, and the refresh schedule you set up.");
+    return L.join("\n");
+  }
+
+  function updateCount(){ var n = $("promptText").value.length; $("charCount").textContent = n.toLocaleString() + " characters"; }
+  $("promptText").addEventListener("input", function(){ updateCount(); save(); });
+
+  function generate(){
+    if (!validateAll()) return;
+    $("promptText").value = buildPrompt(collect());
+    updateCount();
+    $("copyStatus").hidden = true; $("confirmBox").hidden = true;
+    cameFromResult = true;
+    show("result");
+  }
+
+  /* ---------- Result actions ---------- */
+  function status(msg, kind){ var s = $("copyStatus"); s.textContent = msg; s.className = "status " + kind; s.hidden = false; }
+  function selectPrompt(){ var t = $("promptText"); t.focus(); t.select(); try { t.setSelectionRange(0, t.value.length); } catch(e){} }
+  function legacyCopy(){ selectPrompt(); try { return document.execCommand("copy"); } catch(e){ return false; } }
+  $("copyBtn").addEventListener("click", function(){
+    var text = $("promptText").value;
+    var done = function(){ status("Copied. Open Claude, start a new chat, and paste your prompt.", "ok"); };
+    var fallback = function(){
+      if (legacyCopy()) done();
+      else { selectPrompt(); status("Your browser blocked automatic copying. The prompt is selected, so press Ctrl+C (or Cmd+C on a Mac) to copy it.", "warn"); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else fallback();
+  });
+  $("editBtn").addEventListener("click", function(){ cameFromResult = true; goStep(1); show("questions"); });
+  $("startOverBtn").addEventListener("click", function(){ $("confirmBox").hidden = false; $("confirmYes").focus(); });
+  $("confirmNo").addEventListener("click", function(){ $("confirmBox").hidden = true; $("startOverBtn").focus(); });
+  $("confirmYes").addEventListener("click", function(){
+    wipe();
+    $("qform").reset();
+    document.querySelectorAll("#screen-prep input").forEach(function(c){ c.checked = false; });
+    titles = []; renderChips();
+    $("countVal").textContent = $("count").value;
+    $("promptText").value = ""; updateCount();
+    for (var i=1;i<=TOTAL;i++) clearErr(i);
+    syncFreq();
+    cameFromResult = false; $("confirmBox").hidden = true; $("copyStatus").hidden = true;
+    goStep(1);
+    show("welcome");
+    wipe();
+  });
+
+  /* ---------- Boot ---------- */
+  try {
+    var guess = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (guess && $("tz").querySelector('option[value="'+guess+'"]')) $("tz").value = guess;
+  } catch(e){}
+  var saved = load();
+  if (saved) {
+    apply(saved);
+    if (saved._prompt) { $("promptText").value = saved._prompt; updateCount(); cameFromResult = true; }
+    goStep(saved._step || 1);
+    var scr = saved._screen;
+    Object.keys(screens).forEach(function(k){ screens[k].hidden = (k !== (screens[scr] ? scr : "welcome")); });
+  } else {
+    goStep(1);
+  }
+  syncFreq();
+})();
+</script>
+</body>
+</html>
